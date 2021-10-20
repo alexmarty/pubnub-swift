@@ -60,7 +60,8 @@ public class SubscribeSessionFactory {
   public func getSession(
     from config: SubscriptionConfiguration,
     with subscribeSession: SessionReplaceable? = nil,
-    presenceSession: SessionReplaceable? = nil
+    presenceSession: SessionReplaceable? = nil,
+    networkLogger: NetworkLoggerProtocol? = nil
   ) -> SubscriptionSession {
     let configHash = config.subscriptionHashValue
     if let session = sessions.lockedRead({ $0[configHash]?.underlying }) {
@@ -71,10 +72,12 @@ public class SubscribeSessionFactory {
     PubNub.log.debug("Creating new session for with hash value \(config.subscriptionHashValue)")
     return sessions.lockedWrite { dictionary in
       let subscribeSession = subscribeSession ?? HTTPSession(configuration: URLSessionConfiguration.subscription,
-                                                             sessionQueue: subscribeQueue)
+                                                             sessionQueue: subscribeQueue,
+                                                             networkLogger: networkLogger)
 
       let presenceSession = presenceSession ?? HTTPSession(configuration: URLSessionConfiguration.pubnub,
-                                                           sessionQueue: subscribeSession.sessionQueue)
+                                                           sessionQueue: subscribeSession.sessionQueue,
+                                                           networkLogger: networkLogger)
 
       let subscriptionSession = SubscriptionSession(configuration: config,
                                                     network: subscribeSession,
