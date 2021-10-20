@@ -90,10 +90,15 @@ extension HTTPSessionDelegate: URLSessionDataDelegate {
 
     completionHandler(.performDefaultHandling, nil)
   }
-  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+  func urlSession(_ session: URLSession,
+                  dataTask: URLSessionDataTask,
+                  didReceive response: URLResponse,
+                  completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
     networkLogger?.logDataTask(dataTask, didReceive: response)
+    completionHandler(.allow)
   }
 
+  @available(iOS 10.0, *)
   @available(iOSApplicationExtension 10.0, *)
   func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
     networkLogger?.logTask(task, didFinishCollecting: metrics)
@@ -145,6 +150,7 @@ public protocol NetworkLoggerProtocol: AnyObject {
   func logTask(_ task: URLSessionTask, didCompleteWithError error: Error?)
   func logDataTask(_ dataTask: URLSessionDataTask, didReceive data: Data)
     
+  @available(iOS 10.0, *)
   @available(iOSApplicationExtension 10.0, *)
   func logTask(_ task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics)
 }
