@@ -29,7 +29,8 @@ import Foundation
 
 /// A protocol defining a bridge to an implementation of `URLSessionDataDelegate` for receiving delegation events
 class HTTPSessionDelegate: NSObject {
-  weak var sessionBridge: SessionStateBridge?
+    weak var sessionBridge: SessionStateBridge?
+    var networkLogger: NetworkLoggerProtocol?
 }
 
 extension HTTPSessionDelegate: URLSessionDataDelegate {
@@ -47,6 +48,7 @@ extension HTTPSessionDelegate: URLSessionDataDelegate {
 
   // Called when the request fails.
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+    networkLogger?.logTask(task, didCompleteWithError: error)
     // Lookup the request
     guard let request = sessionBridge?.request(for: task) else {
       return
@@ -71,6 +73,7 @@ extension HTTPSessionDelegate: URLSessionDataDelegate {
   // MARK: - URLSessionDataDelegate
 
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+    networkLogger?.logDataTask(dataTask, didReceive: data)
     if let request = sessionBridge?.request(for: dataTask) {
       request.didReceive(data: data)
     }
@@ -86,6 +89,19 @@ extension HTTPSessionDelegate: URLSessionDataDelegate {
     sessionBridge?.sessionStream?.emitURLSession(session, didReceive: challenge)
 
     completionHandler(.performDefaultHandling, nil)
+  }
+  func urlSession(_ session: URLSession,
+                  dataTask: URLSessionDataTask,
+                  didReceive response: URLResponse,
+                  completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+    networkLogger?.logDataTask(dataTask, didReceive: response)
+    completionHandler(.allow)
+  }
+
+  @available(iOS 10.0, *)
+  @available(iOSApplicationExtension 10.0, *)
+  func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+    networkLogger?.logTask(task, didFinishCollecting: metrics)
   }
 }
 
@@ -127,4 +143,14 @@ extension HTTPSession: SessionStateBridge {
     // Clean up the task dictionary
     taskToRequest.removeAll()
   }
+}
+
+public protocol NetworkLoggerProtocol: AnyObject {
+  func logDataTask(_ dataTask: URLSessionDataTask, didReceive response: URLResponse)
+  func logTask(_ task: URLSessionTask, didCompleteWithError error: Error?)
+  func logDataTask(_ dataTask: URLSessionDataTask, didReceive data: Data)
+    
+  @available(iOS 10.0, *)
+  @available(iOSApplicationExtension 10.0, *)
+  func logTask(_ task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics)
 }

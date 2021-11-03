@@ -60,7 +60,8 @@ public struct PubNub {
     configuration: PubNubConfiguration,
     session: SessionReplaceable? = nil,
     subscribeSession: SessionReplaceable? = nil,
-    fileSession: URLSessionReplaceable? = nil
+    fileSession: URLSessionReplaceable? = nil,
+    networkLogger: NetworkLoggerProtocol? = nil
   ) {
     instanceID = UUID()
     self.configuration = configuration
@@ -76,7 +77,8 @@ public struct PubNub {
     }
 
     // Mutable session
-    var networkSession = session ?? HTTPSession(configuration: configuration.urlSessionConfiguration)
+    var networkSession = session ?? HTTPSession(configuration: configuration.urlSessionConfiguration,
+                                                networkLogger: networkLogger)
 
     // Configure the default request operators
     if networkSession.defaultRequestOperator == nil {
@@ -94,7 +96,8 @@ public struct PubNub {
     subscription = SubscribeSessionFactory.shared.getSession(
       from: configuration,
       with: subscribeSession,
-      presenceSession: session
+      presenceSession: session,
+      networkLogger: networkLogger
     )
     
     if let fileSession = fileSession {

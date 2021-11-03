@@ -55,7 +55,8 @@ final class HTTPSession {
     delegate: HTTPSessionDelegate,
     sessionQueue: DispatchQueue,
     requestQueue: DispatchQueue? = nil,
-    sessionStream: SessionStream? = nil
+    sessionStream: SessionStream? = nil,
+    networkLogger: NetworkLoggerProtocol? = nil
   ) {
     precondition(session.delegateQueue.underlyingQueue === sessionQueue,
                  "Session.sessionQueue must be the same DispatchQueue used as the URLSession.delegate underlyingQueue")
@@ -70,6 +71,7 @@ final class HTTPSession {
     PubNub.log.debug("Session created \(sessionID)")
 
     delegate.sessionBridge = self
+    delegate.networkLogger = networkLogger
   }
 
   convenience init(
@@ -77,7 +79,8 @@ final class HTTPSession {
     delegate: HTTPSessionDelegate = HTTPSessionDelegate(),
     sessionQueue: DispatchQueue = DispatchQueue(label: "com.pubnub.session.sessionQueue"),
     requestQueue: DispatchQueue? = nil,
-    sessionStream: SessionStream? = nil
+    sessionStream: SessionStream? = nil,
+    networkLogger: NetworkLoggerProtocol? = nil
   ) {
     let delegateQueue = OperationQueue(maxConcurrentOperationCount: 1,
                                        underlyingQueue: sessionQueue,
@@ -90,7 +93,8 @@ final class HTTPSession {
               delegate: delegate,
               sessionQueue: sessionQueue,
               requestQueue: requestQueue,
-              sessionStream: sessionStream)
+              sessionStream: sessionStream,
+              networkLogger: networkLogger)
   }
 
   deinit {
